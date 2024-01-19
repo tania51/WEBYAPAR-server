@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 3000
 
@@ -18,7 +18,6 @@ app.use(express.json())
 
 
 const uri = process.env.DB_URI;
-// const uri = "mongodb+srv://<username>:<password>@cluster0.jwathvu.mongodb.net/?retryWrites=true&w=majority";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -36,10 +35,34 @@ async function run() {
 
     const adminCollection = client.db('WebYapar').collection('admin');
 
-    app.post('/admin', async(req, res) => {
+    app.post('/user', async(req, res) => {
         const adminData = req.body;
-        const result = adminCollection.insertOne(adminData)
+        const result = await adminCollection.insertOne(adminData)
         res.send(result)
+    })
+
+    app.get('/admin-info', async(req, res) => {
+      const adminLoginInfo = adminCollection.find();
+      const result = await adminLoginInfo.toArray();
+      res.send(result)
+    })
+
+    // updated user data
+    app.put('/updated-user-data', async(req, res) => {
+      const newArr = req.body;
+      const id = newArr._id;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert : true }
+
+      const updateDoc = {
+        $set : {
+          userName : newArr.userName,
+          userImage : newArr.userImage
+        }
+      }
+
+      const result = await adminCollection.updateOne(filter, updateDoc, options);
+      res.send(result)
     })
 
 
